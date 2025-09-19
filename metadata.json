@@ -1,0 +1,5 @@
+{
+  "name": "HeartAware NG",
+  "description": "A triage and escalation system that connects patients with cardiac symptoms to the nearest available Community Health Worker (CHW) via AI-based risk assessment and real-time location matching.",
+  "requestFramePermissions": []
+}
