@@ -18,11 +18,11 @@ const PatientForm: React.FC = () => {
     const [formData, setFormData] = useState<SymptomData>({
         mainSymptom: '', isCrushing: null, doesRadiate: null, isSweating: null, duration: '', phone: '+234', location: {},
     });
-    // FIX: Using a consistent `string` type for all error messages. An empty string signifies no error.
     const [errors, setErrors] = useState<Partial<Record<keyof SymptomData, string>>>({});
     const [formStatus, setFormStatus] = useState<FormStatus>('idle');
     const [riskLevel, setRiskLevel] = useState<RiskLevel | null>(null);
     const [isManualLocation, setIsManualLocation] = useState(false);
+    const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
     
     const { location: geoLoc, isLoading: isGeoLoading, error: geoError, getLocation } = useGeolocation();
 
@@ -40,29 +40,17 @@ const PatientForm: React.FC = () => {
 
     const { stopTimer, resetTimer } = useInactivityTimer(handleFormSubmitForInactivity, 60000);
 
-    useEffect(() => {
-        if (geoLoc) {
-            setFormData(prev => ({ ...prev, location: { ...prev.location, ...geoLoc } }));
-            setIsManualLocation(false);
-            // FIX: Set error to an empty string to clear it, consistent with the new error state type.
-            setErrors(prev => ({...prev, location: ''}));
-        }
-    }, [geoLoc]);
-    
-    const validateStep = (step: number): boolean => {
-        // FIX: Ensured `newErrors` type matches the updated state type.
+    const validateStep = useCallback((step: number): boolean => {
         const newErrors: Partial<Record<keyof SymptomData, string>> = {...errors};
         let isValid = true;
         
         switch(step) {
             case 0:
                 isValid = !!formData.mainSymptom;
-                // FIX: Set a string error message instead of a boolean.
                 newErrors.mainSymptom = !isValid ? "Please select a symptom." : "";
                 break;
             case 2:
                 isValid = !!formData.duration;
-                // FIX: Set a string error message instead of a boolean.
                 newErrors.duration = !isValid ? "Please select a duration." : "";
                 break;
             case 3:
@@ -70,8 +58,9 @@ const PatientForm: React.FC = () => {
                 newErrors.phone = !isValid ? "Please enter a valid Nigerian phone number (e.g., +2348012345678)." : '';
                 break;
             case 4:
-                const hasGeoLocation = formData.location.lat && formData.location.lng;
-                const hasManualLocation = formData.location.state && formData.location.lga && formData.location.city;
+                // FIX: Explicitly convert location checks to booleans to fix a TypeScript error and correctly handle `0` as a valid coordinate.
+                const hasGeoLocation = formData.location.lat != null && formData.location.lng != null;
+                const hasManualLocation = !!(formData.location.state && formData.location.lga && formData.location.city);
                 isValid = hasGeoLocation || hasManualLocation;
                 newErrors.location = !isValid ? "Please provide your location, either automatically or manually." : '';
                 break;
@@ -79,16 +68,18 @@ const PatientForm: React.FC = () => {
         
         setErrors(newErrors);
         return isValid;
-    }
+    }, [formData, errors]);
     
-    const nextStep = () => {
+    const nextStep = useCallback(() => {
       if(validateStep(currentStep)){
         setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS - 1));
       }
-    };
+    }, [currentStep, validateStep]);
+
     const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
 
-    const handleSubmit = async (isEmergency = false) => {
+    const handleSubmit = useCallback(async (isEmergency = false) => {
+        if (formStatus !== 'idle') return;
         if (!isEmergency && !validateStep(4)) return;
         
         setFormStatus('submitting');
@@ -103,8 +94,46 @@ const PatientForm: React.FC = () => {
         } finally {
             setFormStatus('submitted');
         }
-    };
+    }, [formData, stopTimer, formStatus, validateStep]);
+
+    // --- Auto-navigation Effects ---
+
+    useEffect(() => {
+        // Auto-advance from symptom selection
+        if (currentStep === 0 && formData.mainSymptom) {
+            const timer = setTimeout(() => nextStep(), 300); // Small delay for UX
+            return () => clearTimeout(timer);
+        }
+    }, [formData.mainSymptom, currentStep, nextStep]);
+
+    useEffect(() => {
+        // Auto-advance from duration selection
+        if (currentStep === 2 && formData.duration) {
+            const timer = setTimeout(() => nextStep(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [formData.duration, currentStep, nextStep]);
     
+    useEffect(() => {
+        // Handle location data when it arrives
+        if (geoLoc) {
+            setFormData(prev => ({ ...prev, location: { ...prev.location, ...geoLoc } }));
+            setIsManualLocation(false);
+            setErrors(prev => ({...prev, location: ''}));
+        }
+    }, [geoLoc]);
+    
+    useEffect(() => {
+        // Auto-submit after automatic location capture on the final step
+        const hasAutoLocation = formData.location.lat != null && formData.location.lng != null && !isManualLocation;
+        if (currentStep === TOTAL_STEPS - 1 && hasAutoLocation && formStatus === 'idle') {
+            setIsAutoSubmitting(true);
+            const timer = setTimeout(() => handleSubmit(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [formData.location, currentStep, isManualLocation, formStatus, handleSubmit]);
+
+
     const handleLocationChange = <K extends keyof LocationData>(field: K, value: LocationData[K]) => {
          setFormData(prev => ({...prev, location: {...prev.location, [field]: value}}));
          if(field === 'state') {
@@ -120,6 +149,7 @@ const PatientForm: React.FC = () => {
         setRiskLevel(null);
         setCurrentStep(0);
         setIsManualLocation(false);
+        setIsAutoSubmitting(false);
         resetTimer();
     };
 
@@ -138,12 +168,11 @@ const PatientForm: React.FC = () => {
                     <StepWrapper title="What is your main symptom?">
                         <div className="grid grid-cols-1 gap-3">
                            {SYMPTOM_OPTIONS.map(symptom => (
-                                <OptionButton key={symptom} isSelected={formData.mainSymptom === symptom} onClick={() => { setFormData({...formData, mainSymptom: symptom}); nextStep(); }}>
+                                <OptionButton key={symptom} isSelected={formData.mainSymptom === symptom} onClick={() => setFormData({...formData, mainSymptom: symptom})}>
                                     {symptom}
                                 </OptionButton>
                            ))}
                         </div>
-                        {/* FIX: Render the error message from the state object. */}
                         {errors.mainSymptom && <p className="text-xs text-red-600 text-center mt-2">{errors.mainSymptom}</p>}
                     </StepWrapper>
                 )}
@@ -160,12 +189,11 @@ const PatientForm: React.FC = () => {
                     <StepWrapper title="How long have the symptoms lasted?">
                          <div className="grid grid-cols-1 gap-3">
                             {DURATION_OPTIONS.map(duration => (
-                                <OptionButton key={duration} isSelected={formData.duration === duration} onClick={() => {setFormData({...formData, duration}); nextStep();}}>
+                                <OptionButton key={duration} isSelected={formData.duration === duration} onClick={() => setFormData({...formData, duration})}>
                                     {duration}
                                 </OptionButton>
                             ))}
                         </div>
-                        {/* FIX: Render the error message from the state object. */}
                         {errors.duration && <p className="text-xs text-red-600 text-center mt-2">{errors.duration}</p>}
                     </StepWrapper>
                 )}
@@ -173,44 +201,50 @@ const PatientForm: React.FC = () => {
                 {currentStep === 3 && (
                     <StepWrapper title="What is your contact number?">
                         <p className="text-sm text-center text-slate-600 mb-4">We need this to connect you with a health worker.</p>
-                        {/* FIX: Removed 'as string' cast as `errors.phone` is now consistently a string. */}
                         <Input id="phone" label="Phone Number" type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} error={errors.phone} placeholder="+2348012345678" />
                     </StepWrapper>
                 )}
 
                 {currentStep === 4 && (
                     <StepWrapper title="Where are you located?">
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 text-center">
-                            <Button type="button" onClick={() => getLocation()} isLoading={isGeoLoading} fullWidth disabled={!!geoLoc}>
-                                {geoLoc ? 'Location Shared Successfully!' : 'Share Location Automatically'}
-                            </Button>
-                             {geoError && <p className="text-xs text-red-600">{geoError}</p>}
-                            {geoLoc && <p className="text-xs text-green-600">GPS coordinates captured! You can proceed.</p>}
-                            
-                            <div className="text-sm text-slate-500">or</div>
-                            
-                            <button onClick={() => setIsManualLocation(p => !p)} className="text-blue-600 font-semibold text-sm">
-                                {isManualLocation ? 'Hide Manual Entry' : 'Enter Address Manually'}
-                            </button>
-                            
-                           {isManualLocation && (
-                             <div className="text-left space-y-4 pt-4 border-t">
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                     <Select id="state" label="State" value={formData.location.state || ''} onChange={e => handleLocationChange('state', e.target.value)}>
-                                        <option value="">Select State</option>
-                                        {Object.keys(NIGERIAN_STATES).map(s => <option key={s} value={s}>{s}</option>)}
-                                    </Select>
-                                    <Select id="lga" label="LGA" value={formData.location.lga || ''} onChange={e => handleLocationChange('lga', e.target.value)} disabled={!formData.location.state}>
-                                        <option value="">Select LGA</option>
-                                        {formData.location.state && NIGERIAN_STATES[formData.location.state].map(lga => <option key={lga} value={lga}>{lga}</option>)}
-                                    </Select>
+                        {isAutoSubmitting ? (
+                             <div className="text-center p-4 min-h-[200px] flex flex-col justify-center items-center">
+                                <Spinner color="border-blue-600" />
+                                <p className="text-sm text-slate-600 mt-2 font-semibold animate-pulse">Location captured! Submitting your assessment...</p>
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 text-center">
+                                <Button type="button" onClick={() => getLocation()} isLoading={isGeoLoading} fullWidth disabled={!!geoLoc}>
+                                    {geoLoc ? 'Location Shared Successfully!' : 'Share Location Automatically'}
+                                </Button>
+                                {geoError && <p className="text-xs text-red-600">{geoError}</p>}
+                                {geoLoc && <p className="text-xs text-green-600">GPS coordinates captured! You can proceed.</p>}
+                                
+                                <div className="text-sm text-slate-500">or</div>
+                                
+                                <button onClick={() => setIsManualLocation(p => !p)} className="text-blue-600 font-semibold text-sm">
+                                    {isManualLocation ? 'Hide Manual Entry' : 'Enter Address Manually'}
+                                </button>
+                                
+                            {isManualLocation && (
+                                <div className="text-left space-y-4 pt-4 border-t">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Select id="state" label="State" value={formData.location.state || ''} onChange={e => handleLocationChange('state', e.target.value)}>
+                                            <option value="">Select State</option>
+                                            {Object.keys(NIGERIAN_STATES).map(s => <option key={s} value={s}>{s}</option>)}
+                                        </Select>
+                                        <Select id="lga" label="LGA" value={formData.location.lga || ''} onChange={e => handleLocationChange('lga', e.target.value)} disabled={!formData.location.state}>
+                                            <option value="">Select LGA</option>
+                                            {formData.location.state && NIGERIAN_STATES[formData.location.state].map(lga => <option key={lga} value={lga}>{lga}</option>)}
+                                        </Select>
+                                    </div>
+                                    <Input id="city" label="City/Town" value={formData.location.city || ''} onChange={e => handleLocationChange('city', e.target.value)} />
+                                    <Input id="address" label="Street Address" value={formData.location.address || ''} onChange={e => handleLocationChange('address', e.target.value)} />
                                 </div>
-                                <Input id="city" label="City/Town" value={formData.location.city || ''} onChange={e => handleLocationChange('city', e.target.value)} />
-                                <Input id="address" label="Street Address" value={formData.location.address || ''} onChange={e => handleLocationChange('address', e.target.value)} />
-                             </div>
-                           )}
-                           {errors.location && <p className="text-xs text-red-600 text-center">{errors.location}</p>}
-                        </div>
+                            )}
+                            {errors.location && <p className="text-xs text-red-600 text-center">{errors.location}</p>}
+                            </div>
+                        )}
                     </StepWrapper>
                 )}
                 
@@ -224,7 +258,7 @@ const PatientForm: React.FC = () => {
                         </Button>
                     )}
                     {currentStep === TOTAL_STEPS - 1 && (
-                        <Button type="submit" variant="primary" onClick={() => handleSubmit()} isLoading={formStatus === 'submitting'} fullWidth>
+                        <Button type="submit" variant="primary" onClick={() => handleSubmit()} isLoading={formStatus === 'submitting'} fullWidth disabled={isAutoSubmitting}>
                             Assess My Risk
                         </Button>
                     )}
