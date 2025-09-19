@@ -174,7 +174,7 @@ const PatientForm: React.FC = () => {
     const isHighRiskSubmission = formStatus === 'submitting' && riskLevel === RiskLevel.HIGH;
 
     return (
-        <div className={`max-w-xl mx-auto bg-white p-4 sm:p-6 rounded-2xl shadow-xl transition-opacity duration-300 ${isHighRiskSubmission ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`max-w-xl mx-auto bg-white dark:bg-slate-800/50 p-4 sm:p-6 rounded-2xl shadow-2xl shadow-slate-500/10 dark:shadow-black/20 transition-opacity duration-300 ${isHighRiskSubmission ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="space-y-6">
                 <ProgressBar current={currentStep + 1} total={TOTAL_STEPS} />
 
@@ -187,7 +187,7 @@ const PatientForm: React.FC = () => {
                                 </OptionButton>
                            ))}
                         </div>
-                        {errors.mainSymptom && <p className="text-xs text-red-600 text-center mt-2">{errors.mainSymptom}</p>}
+                        {errors.mainSymptom && <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2">{errors.mainSymptom}</p>}
                     </StepWrapper>
                 )}
                 
@@ -208,13 +208,13 @@ const PatientForm: React.FC = () => {
                                 </OptionButton>
                             ))}
                         </div>
-                        {errors.duration && <p className="text-xs text-red-600 text-center mt-2">{errors.duration}</p>}
+                        {errors.duration && <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2">{errors.duration}</p>}
                     </StepWrapper>
                 )}
                 
                 {currentStep === 3 && (
                     <StepWrapper title="What is your contact number?">
-                        <p className="text-sm text-center text-slate-600 mb-4">We need this to connect you with a health worker.</p>
+                        <p className="text-sm text-center text-slate-600 dark:text-slate-400 mb-4">We need this to connect you with a health worker.</p>
                         <Input id="phone" label="Phone Number" type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} error={errors.phone} placeholder="+2348012345678" />
                     </StepWrapper>
                 )}
@@ -223,26 +223,26 @@ const PatientForm: React.FC = () => {
                     <StepWrapper title="Where are you located?">
                         {isAutoSubmitting ? (
                              <div className="text-center p-4 min-h-[200px] flex flex-col justify-center items-center">
-                                <Spinner color="border-blue-600" />
-                                <p className="text-sm text-slate-600 mt-2 font-semibold animate-pulse">Location captured! Submitting your assessment...</p>
+                                <Spinner color="border-teal-600 dark:border-teal-500" />
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 font-semibold animate-pulse">Location captured! Submitting your assessment...</p>
                             </div>
                         ) : (
-                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 text-center">
-                                <p className="text-sm text-slate-600">To connect you with the nearest health worker, we need your location. Please share it automatically for the fastest response.</p>
-                                <Button type="button" onClick={() => getLocation()} isLoading={isGeoLoading} fullWidth disabled={!!geoLoc}>
-                                    {geoLoc ? 'Location Shared Successfully!' : 'Share Location Automatically'}
-                                </Button>
-                                {geoError && <p className="text-xs text-red-600">{geoError}</p>}
-                                {geoLoc && <p className="text-xs text-green-600">GPS coordinates captured! Submitting automatically...</p>}
+                            <div className="space-y-4 text-center">
+                                <LocationPermissionCard
+                                    onAllow={getLocation}
+                                    isLoading={isGeoLoading}
+                                    isAllowed={!!geoLoc}
+                                    error={geoError}
+                                />
                                 
-                                <div className="text-sm text-slate-500">or</div>
+                                <div className="text-sm text-slate-500 dark:text-slate-400">or</div>
                                 
-                                <button onClick={() => setIsManualLocation(p => !p)} className="text-blue-600 font-semibold text-sm">
+                                <button onClick={() => setIsManualLocation(p => !p)} className="text-teal-600 dark:text-teal-400 font-semibold text-sm hover:underline">
                                     {isManualLocation ? 'Hide Manual Entry' : 'Enter Address Manually'}
                                 </button>
                                 
                             {isManualLocation && (
-                                <div className="text-left space-y-4 pt-4 border-t">
+                                <div className="text-left space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700/50 animate-fade-in">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <Select id="state" label="State" value={formData.location.state || ''} onChange={e => handleLocationChange('state', e.target.value)}>
                                             <option value="">Select State</option>
@@ -257,31 +257,24 @@ const PatientForm: React.FC = () => {
                                     <Input id="address" label="Street Address (Optional)" value={formData.location.address || ''} onChange={e => handleLocationChange('address', e.target.value)} />
                                 </div>
                             )}
-                            {errors.location && <p className="text-xs text-red-600 text-center">{errors.location}</p>}
+                            {errors.location && <p className="text-xs text-red-600 dark:text-red-400 text-center">{errors.location}</p>}
                             </div>
                         )}
                     </StepWrapper>
                 )}
                 
-                <div className="flex items-center gap-4 pt-4 border-t border-slate-200">
+                <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700/50">
                     <Button
                         type="button"
                         variant="secondary"
                         onClick={prevStep}
                         disabled={currentStep === 0}
-                        fullWidth={currentStep > 0 && currentStep < TOTAL_STEPS - 1}
                     >
                         Back
                     </Button>
-                    
-                    {currentStep === TOTAL_STEPS - 1 && (
-                        <Button type="submit" variant="primary" onClick={() => handleSubmit()} isLoading={formStatus === 'submitting'} fullWidth disabled={isAutoSubmitting}>
-                            Assess My Risk
-                        </Button>
-                    )}
                 </div>
 
-                 <div className="text-center">
+                 <div className="text-center pt-2">
                     <Button type="button" variant="danger" onClick={() => handleSubmit(true)} isLoading={formStatus === 'submitting'}>
                         Emergency - Get Help Now
                     </Button>
@@ -295,16 +288,16 @@ const PatientForm: React.FC = () => {
 
 const ProgressBar: React.FC<{current: number; total: number}> = ({ current, total }) => (
     <div>
-        <p className="text-sm font-medium text-slate-500 mb-1 text-center">Step {current} of {total}</p>
-        <div className="w-full bg-slate-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${(current / total) * 100}%` }}></div>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 text-center">Step {current} of {total}</p>
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+            <div className="bg-teal-600 dark:bg-teal-500 h-2 rounded-full transition-all duration-300" style={{ width: `${(current / total) * 100}%` }}></div>
         </div>
     </div>
 );
 
 const StepWrapper: React.FC<{title: string; children: React.ReactNode}> = ({title, children}) => (
     <div className="space-y-4 animate-fade-in">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 text-center">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 text-center">{title}</h2>
         <div className="space-y-4">{children}</div>
     </div>
 );
@@ -313,27 +306,30 @@ const OptionButton: React.FC<{onClick: () => void; isSelected: boolean; children
     <button
         type="button"
         onClick={onClick}
-        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 font-semibold ${isSelected ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-200 text-blue-800' : 'bg-white border-slate-300 hover:border-blue-400'}`}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-semibold 
+        ${isSelected 
+            ? 'bg-teal-50 border-teal-500 ring-4 ring-teal-500/20 text-teal-800 dark:bg-teal-500/10 dark:border-teal-500 dark:text-teal-200' 
+            : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-500'}`}
     >
         {children}
     </button>
 );
 
 const YesNoToggle: React.FC<{label: string; value: boolean | null; onChange: (value: boolean) => void}> = ({label, value, onChange}) => (
-    <div className="p-3 bg-slate-50 rounded-lg">
-        <p className="text-sm font-medium text-slate-700 mb-2">{label}</p>
+    <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{label}</p>
         <div className="grid grid-cols-2 gap-2">
             <button
                 type="button"
                 onClick={() => onChange(true)}
-                className={`p-2 rounded-md font-semibold text-sm transition-colors ${value === true ? 'bg-blue-600 text-white' : 'bg-white hover:bg-slate-200'}`}
+                className={`p-2 rounded-md font-semibold text-sm transition-colors ${value === true ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500'}`}
             >
                 Yes
             </button>
              <button
                 type="button"
                 onClick={() => onChange(false)}
-                className={`p-2 rounded-md font-semibold text-sm transition-colors ${value === false ? 'bg-blue-600 text-white' : 'bg-white hover:bg-slate-200'}`}
+                className={`p-2 rounded-md font-semibold text-sm transition-colors ${value === false ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500'}`}
             >
                 No
             </button>
@@ -341,17 +337,50 @@ const YesNoToggle: React.FC<{label: string; value: boolean | null; onChange: (va
     </div>
 );
 
+const LocationPermissionCard: React.FC<{
+    onAllow: () => void,
+    isLoading: boolean,
+    isAllowed: boolean,
+    error: string | null
+}> = ({ onAllow, isLoading, isAllowed, error }) => (
+    <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+        <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-full bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </div>
+        </div>
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Share your location for a faster response.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">This allows us to connect you with the nearest health worker instantly.</p>
+        <Button type="button" onClick={onAllow} isLoading={isLoading} fullWidth disabled={isAllowed}>
+            {isAllowed ? 'Location Shared Successfully!' : 'Allow Location Access'}
+        </Button>
+        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+        {isAllowed && <p className="text-xs text-green-600 dark:text-green-400">GPS coordinates captured! Submitting automatically...</p>}
+    </div>
+);
+
 
 const FeedbackScreen: React.FC<{riskLevel: RiskLevel, onReset: () => void}> = ({riskLevel, onReset}) => {
     const feedbackContent = {
         [RiskLevel.LOW]: {
-            bgColor: "bg-green-50", title: "Low Risk Detected", icon: "✅", message: "Your symptoms currently suggest a low risk. However, please continue to monitor your health and consult a doctor if symptoms worsen.",
+            bgColor: "bg-green-50 dark:bg-green-900/20", 
+            title: "Low Risk Detected", 
+            icon: "✅", 
+            message: "Your symptoms currently suggest a low risk. However, please continue to monitor your health and consult a doctor if symptoms worsen.",
         },
         [RiskLevel.MEDIUM]: {
-            bgColor: "bg-yellow-50", title: "Medium Risk Detected", icon: "⚠️", message: "Your symptoms indicate a medium risk. We recommend visiting a nearby clinic or consulting a doctor soon for a professional evaluation.",
+            bgColor: "bg-yellow-50 dark:bg-yellow-900/20", 
+            title: "Medium Risk Detected", 
+            icon: "⚠️", 
+            message: "Your symptoms indicate a medium risk. We recommend visiting a nearby clinic or consulting a doctor soon for a professional evaluation.",
         },
         [RiskLevel.HIGH]: {
-            bgColor: "bg-red-50", title: "High Risk Detected", icon: "🚨", message: "Hang tight, help is on the way. We have alerted a nearby Community Health Worker who will contact you shortly. Please try to remain calm.",
+            bgColor: "bg-red-50 dark:bg-red-900/20", 
+            title: "High Risk Detected", 
+            icon: "🚨", 
+            message: "Hang tight, help is on the way. We have alerted a nearby Community Health Worker who will contact you shortly. Please try to remain calm.",
         }
     };
     
@@ -361,19 +390,19 @@ const FeedbackScreen: React.FC<{riskLevel: RiskLevel, onReset: () => void}> = ({
          return (
              <div className="max-w-2xl mx-auto text-center p-8">
                  <div className="animate-pulse text-6xl mb-4">{content.icon}</div>
-                 <h2 className="text-3xl font-bold text-red-800 mb-2">{content.title}</h2>
-                 <p className="text-slate-700 mb-6">{content.message}</p>
+                 <h2 className="text-3xl font-bold text-red-800 dark:text-red-300 mb-2">{content.title}</h2>
+                 <p className="text-slate-700 dark:text-slate-300 mb-6">{content.message}</p>
                  <Spinner size="lg" color="border-red-600" />
-                 <p className="text-sm text-slate-500 mt-4">Do not close this page.</p>
+                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-4">Do not close this page.</p>
              </div>
          );
     }
     
     return (
-        <div className={`max-w-2xl mx-auto text-center p-8 rounded-lg shadow-md ${content.bgColor}`}>
+        <div className={`max-w-2xl mx-auto text-center p-8 rounded-2xl shadow-lg ${content.bgColor}`}>
             <div className="text-6xl mb-4">{content.icon}</div>
-            <h2 className="text-3xl font-bold text-slate-800 mb-2">{content.title}</h2>
-            <p className="text-slate-700 mb-6">{content.message}</p>
+            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">{content.title}</h2>
+            <p className="text-slate-700 dark:text-slate-300 mb-6">{content.message}</p>
             <Button onClick={onReset}>Submit Another Response</Button>
         </div>
     );

@@ -87,19 +87,19 @@ const CHWDashboard: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 className="text-3xl font-bold text-slate-900">CHW Alert Dashboard</h1>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">CHW Alert Dashboard</h1>
                 <Button variant="secondary" onClick={logout}>Log Out</Button>
             </div>
             
-            <div className="mb-6 bg-white p-2 rounded-lg shadow-sm flex flex-wrap items-center gap-2">
+            <div className="mb-6 bg-white dark:bg-slate-800 p-2 rounded-xl shadow-md shadow-slate-500/5 flex flex-wrap items-center gap-2">
                  {FILTERS.map(f => (
                     <button 
                         key={f}
                         onClick={() => setFilter(f)}
-                        className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${filter === f ? 'bg-blue-600 text-white' : 'hover:bg-slate-200 text-slate-700'}`}
+                        className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors ${filter === f ? 'bg-teal-600 text-white' : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`}
                     >
                         {f}
-                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === f ? 'bg-white text-blue-700' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === f ? 'bg-white text-teal-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                             {alertCounts[f]}
                         </span>
                     </button>
@@ -108,13 +108,13 @@ const CHWDashboard: React.FC = () => {
 
 
             {isLoading && alerts.length === 0 ? (
-                <div className="flex justify-center items-center p-10"><Spinner size="lg" color="border-blue-600"/></div>
+                <div className="flex justify-center items-center p-10"><Spinner size="lg" color="border-teal-600 dark:border-teal-500"/></div>
             ) : error ? (
-                <p className="text-center text-red-500 bg-red-50 p-4 rounded-lg">{error}</p>
+                <p className="text-center text-red-500 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">{error}</p>
             ) : filteredAlerts.length === 0 ? (
-                <div className="text-center bg-white p-10 rounded-lg shadow">
-                    <h3 className="text-xl font-medium text-slate-700">No alerts found</h3>
-                    <p className="text-slate-500 mt-2">There are no "{filter}" alerts at the moment.</p>
+                <div className="text-center bg-white dark:bg-slate-800 p-10 rounded-lg shadow">
+                    <h3 className="text-xl font-medium text-slate-700 dark:text-slate-300">No alerts found</h3>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">There are no "{filter}" alerts at the moment.</p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -140,7 +140,7 @@ const CHWDashboard: React.FC = () => {
                          {RESOLUTION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </Select>
                     <textarea 
-                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-lg p-2 text-sm focus:ring-teal-500 focus:border-teal-500"
                         rows={3}
                         placeholder="Add optional notes..."
                     />

@@ -53,13 +53,13 @@ const CHWLogin: React.FC = () => {
                     required
                     autoComplete="current-password"
                 />
-                {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+                {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
                 <Button type="submit" fullWidth isLoading={isLoading}>
                     Sign In
                 </Button>
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm text-gray-600 dark:text-slate-400">
                     Don't have an account?{' '}
-                    <Link to="/chw/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                    <Link to="/chw/signup" className="font-medium text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300">
                         Sign up
                     </Link>
                 </p>

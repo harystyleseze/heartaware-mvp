@@ -10,12 +10,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', isLoading = false, leftIcon, fullWidth = false, className, ...props }) => {
-    const baseClasses = "inline-flex items-center justify-center font-semibold py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed shadow-sm";
+    const baseClasses = "inline-flex items-center justify-center font-semibold py-2.5 px-5 rounded-xl focus:outline-none focus:ring-4 transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed shadow-sm";
 
     const variantClasses = {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-        secondary: 'bg-slate-200 text-slate-800 hover:bg-slate-300 focus:ring-slate-400',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+        primary: 'bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500/50 dark:focus:ring-teal-400/50',
+        secondary: 'bg-slate-200 text-slate-800 hover:bg-slate-300 focus:ring-slate-500/50 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:focus:ring-slate-600/50',
+        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500/50 dark:focus:ring-red-400/50',
     };
 
     const widthClass = fullWidth ? 'w-full' : '';

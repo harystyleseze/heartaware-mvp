@@ -7,11 +7,14 @@ import CHWLogin from './pages/CHWLogin';
 import CHWSignUp from './pages/CHWSignUp';
 import { Header } from './components/Header';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { useTheme } from './hooks/useTheme';
 
 const App: React.FC = () => {
+    useTheme(); // Initialize theme
+
     return (
         <HashRouter>
-            <div className="min-h-screen bg-gray-50 text-gray-800">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
                 <Header />
                 <main className="p-4 sm:p-6 md:p-8">
                     <Routes>

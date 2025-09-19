@@ -4,7 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HeartAware NG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
 <script type="importmap">
 {
   "imports": {
@@ -15,8 +23,16 @@
   }
 }
 </script>
+<script>
+  // Set theme based on localStorage or system preference
+  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+</script>
 </head>
-<body class="bg-slate-50 font-sans">
+<body class="bg-slate-50 dark:bg-slate-900 font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
