@@ -49,6 +49,9 @@ const PatientForm: React.FC = () => {
                 isValid = !!formData.mainSymptom;
                 newErrors.mainSymptom = !isValid ? "Please select a symptom." : "";
                 break;
+            case 1:
+                isValid = formData.isCrushing !== null && formData.doesRadiate !== null && formData.isSweating !== null;
+                break;
             case 2:
                 isValid = !!formData.duration;
                 newErrors.duration = !isValid ? "Please select a duration." : "";
@@ -58,7 +61,6 @@ const PatientForm: React.FC = () => {
                 newErrors.phone = !isValid ? "Please enter a valid Nigerian phone number (e.g., +2348012345678)." : '';
                 break;
             case 4:
-                // FIX: Explicitly convert location checks to booleans to fix a TypeScript error and correctly handle `0` as a valid coordinate.
                 const hasGeoLocation = formData.location.lat != null && formData.location.lng != null;
                 const hasManualLocation = !!(formData.location.state && formData.location.lga && formData.location.city);
                 isValid = hasGeoLocation || hasManualLocation;
@@ -99,23 +101,34 @@ const PatientForm: React.FC = () => {
     // --- Auto-navigation Effects ---
 
     useEffect(() => {
-        // Auto-advance from symptom selection
         if (currentStep === 0 && formData.mainSymptom) {
-            const timer = setTimeout(() => nextStep(), 300); // Small delay for UX
+            const timer = setTimeout(() => nextStep(), 300);
             return () => clearTimeout(timer);
         }
     }, [formData.mainSymptom, currentStep, nextStep]);
 
     useEffect(() => {
-        // Auto-advance from duration selection
+        if (currentStep === 1 && formData.isCrushing !== null && formData.doesRadiate !== null && formData.isSweating !== null) {
+            const timer = setTimeout(() => nextStep(), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [formData.isCrushing, formData.doesRadiate, formData.isSweating, currentStep, nextStep]);
+
+    useEffect(() => {
         if (currentStep === 2 && formData.duration) {
             const timer = setTimeout(() => nextStep(), 300);
             return () => clearTimeout(timer);
         }
     }, [formData.duration, currentStep, nextStep]);
+
+    useEffect(() => {
+        if (currentStep === 3 && PHONE_REGEX.test(formData.phone)) {
+            const timer = setTimeout(() => nextStep(), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [formData.phone, currentStep, nextStep]);
     
     useEffect(() => {
-        // Handle location data when it arrives
         if (geoLoc) {
             setFormData(prev => ({ ...prev, location: { ...prev.location, ...geoLoc } }));
             setIsManualLocation(false);
@@ -124,9 +137,10 @@ const PatientForm: React.FC = () => {
     }, [geoLoc]);
     
     useEffect(() => {
-        // Auto-submit after automatic location capture on the final step
         const hasAutoLocation = formData.location.lat != null && formData.location.lng != null && !isManualLocation;
-        if (currentStep === TOTAL_STEPS - 1 && hasAutoLocation && formStatus === 'idle') {
+        const hasCompletedManualLocation = isManualLocation && !!(formData.location.state && formData.location.lga && formData.location.city);
+
+        if (currentStep === TOTAL_STEPS - 1 && (hasAutoLocation || hasCompletedManualLocation) && formStatus === 'idle') {
             setIsAutoSubmitting(true);
             const timer = setTimeout(() => handleSubmit(false), 2000);
             return () => clearTimeout(timer);
@@ -214,11 +228,12 @@ const PatientForm: React.FC = () => {
                             </div>
                         ) : (
                             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 text-center">
+                                <p className="text-sm text-slate-600">To connect you with the nearest health worker, we need your location. Please share it automatically for the fastest response.</p>
                                 <Button type="button" onClick={() => getLocation()} isLoading={isGeoLoading} fullWidth disabled={!!geoLoc}>
                                     {geoLoc ? 'Location Shared Successfully!' : 'Share Location Automatically'}
                                 </Button>
                                 {geoError && <p className="text-xs text-red-600">{geoError}</p>}
-                                {geoLoc && <p className="text-xs text-green-600">GPS coordinates captured! You can proceed.</p>}
+                                {geoLoc && <p className="text-xs text-green-600">GPS coordinates captured! Submitting automatically...</p>}
                                 
                                 <div className="text-sm text-slate-500">or</div>
                                 
@@ -239,7 +254,7 @@ const PatientForm: React.FC = () => {
                                         </Select>
                                     </div>
                                     <Input id="city" label="City/Town" value={formData.location.city || ''} onChange={e => handleLocationChange('city', e.target.value)} />
-                                    <Input id="address" label="Street Address" value={formData.location.address || ''} onChange={e => handleLocationChange('address', e.target.value)} />
+                                    <Input id="address" label="Street Address (Optional)" value={formData.location.address || ''} onChange={e => handleLocationChange('address', e.target.value)} />
                                 </div>
                             )}
                             {errors.location && <p className="text-xs text-red-600 text-center">{errors.location}</p>}
@@ -249,14 +264,16 @@ const PatientForm: React.FC = () => {
                 )}
                 
                 <div className="flex items-center gap-4 pt-4 border-t border-slate-200">
-                    <Button type="button" variant="secondary" onClick={prevStep} disabled={currentStep === 0}>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={prevStep}
+                        disabled={currentStep === 0}
+                        fullWidth={currentStep > 0 && currentStep < TOTAL_STEPS - 1}
+                    >
                         Back
                     </Button>
-                    {currentStep < TOTAL_STEPS - 1 && (
-                         <Button type="button" variant="primary" onClick={nextStep} fullWidth>
-                            Next
-                        </Button>
-                    )}
+                    
                     {currentStep === TOTAL_STEPS - 1 && (
                         <Button type="submit" variant="primary" onClick={() => handleSubmit()} isLoading={formStatus === 'submitting'} fullWidth disabled={isAutoSubmitting}>
                             Assess My Risk
