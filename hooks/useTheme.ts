@@ -34,18 +34,22 @@ export const useTheme = () => {
     // This effect applies the theme class to the <html> element
     // and persists the theme choice in localStorage whenever the `theme` state changes.
     useEffect(() => {
+        const root = document.documentElement;
         if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
+            root.classList.add('dark');
             localStorage.setItem('theme', 'dark');
         } else {
-            document.documentElement.classList.remove('dark');
+            root.classList.remove('dark');
             localStorage.setItem('theme', 'light');
         }
     }, [theme]);
 
     const toggleTheme = useCallback(() => {
-        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-    }, []);
+        // By depending on the `theme` variable, we ensure this function always
+        // has the latest state value, preventing potential stale state issues.
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+    }, [theme]);
 
     return { theme, toggleTheme };
 };
